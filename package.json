@@ -1,0 +1,10 @@
+{
+  "name": "rpg-crud",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Projeto CRUD de RPG com JavaScript",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
