@@ -32,7 +32,125 @@ export class ItemMagico {
   }
 }
 
+const gerenciadorItens = {
+  idItemAtual: 1,
+  itensMagicos: [],
+
+  validarItem(item) {
+    if (!(item instanceof ItemMagico)) {
+      throw new Error("Objeto inválido. Esperado: ItemMagico.");
+    }
+    const { tipo, forca, defesa } = item;
+
+    if (forca === 0 && defesa === 0) {
+      throw new Error(
+        "O item deve ter pelo menos Força ou Defesa maior que 0."
+      );
+    }
+
+    if (forca > 10 || defesa > 10) {
+      throw new Error("Força e Defesa devem ser no máximo 10.");
+    }
+
+    if (tipo === "Arma" && defesa !== 0) {
+      throw new Error("Armas devem ter Defesa igual a 0.");
+    }
+
+    if (tipo === "Armadura" && forca !== 0) {
+      throw new Error("Armaduras devem ter Força igual a 0.");
+    }
+
+    if (!["Arma", "Armadura", "Amuleto"].includes(tipo)) {
+      throw new Error("Tipo inválido. Use apenas: Arma, Armadura ou Amuleto.");
+    }
+
+    return true;
+  },
+
+  criarItemMagico(item) {
+    this.validarItem(item);
+    item.id = this.idItemAtual++;
+    this.itensMagicos.push(item);
+    return item;
+  },
+
+  listarItensMagicos() {
+    return this.itensMagicos;
+  },
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("formItemMagico");
+  const tabelaContainer = document.getElementById("tabelaItensMagicos");
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    try {
+      const nome = document.getElementById("nomeItem").value.trim();
+      const tipo = document.getElementById("tipoItem").value;
+      const forca = parseInt(document.getElementById("forcaItem").value);
+      const defesa = parseInt(document.getElementById("defesaItem").value);
+
+      const novoItem = new ItemMagico(null, nome, tipo, forca, defesa);
+      gerenciadorItens.criarItemMagico(novoItem);
+
+      alert("Item criado com sucesso!");
+      form.reset();
+    } catch (erro) {
+      alert("Erro ao criar item: " + erro.message);
+    }
+  });
+
+  document.getElementById("btnListarItens").addEventListener("click", () => {
+    const itens = gerenciadorItens.listarItensMagicos();
+
+    if (itens.length === 0) {
+      tabelaContainer.innerHTML =
+        "<p class='text-light'>Nenhum item cadastrado ainda.</p>";
+      return;
+    }
+
+    let tabela = `
+      <div class="table-responsive">
+        <table class="table table-dark table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Tipo</th>
+              <th>Força</th>
+              <th>Defesa</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    itens.forEach((item) => {
+      tabela += `
+        <tr>
+          <td>${item.id}</td>
+          <td>${item.nome}</td>
+          <td>${item.tipo}</td>
+          <td>${item.forca}</td>
+          <td>${item.defesa}</td>
+        </tr>
+      `;
+    });
+
+    tabela += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    tabelaContainer.innerHTML = tabela;
+  });
+});
+
 export class Personagem {
+  static _idAtual = 1;
+
   constructor(nome, nomeAventureiro, classe, level, forca, defesa) {
     this.id = Personagem._idAtual++;
     this.nome = nome;
@@ -93,6 +211,77 @@ export class Personagem {
     );
   }
 }
+
+const personagens = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("formPersonagem");
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    try {
+      const nome = document.getElementById("nome").value.trim();
+      const nomeAventureiro = document
+        .getElementById("nomeAventureiro")
+        .value.trim();
+      const classe = document.getElementById("classe").value.trim();
+      const level = parseInt(document.getElementById("level").value);
+      const forca = parseInt(document.getElementById("forca").value);
+      const defesa = parseInt(document.getElementById("defesa").value);
+
+      const novoPersonagem = new Personagem(
+        nome,
+        nomeAventureiro,
+        classe,
+        level,
+        forca,
+        defesa
+      );
+
+      personagens.push(novoPersonagem);
+      alert("Personagem criado com sucesso!");
+      form.reset();
+    } catch (erro) {
+      alert("Erro ao criar personagem: " + erro.message);
+    }
+  });
+
+  function renderizarTabelaPersonagens() {
+    const tbody = document.querySelector("#tabelaPersonagens tbody");
+    tbody.innerHTML = "";
+
+    if (personagens.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-light">Nenhum personagem cadastrado ainda.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    personagens.forEach((p) => {
+      const linha = `
+        <tr>
+          <td>${p.id}</td>
+          <td>${p.nome}</td>
+          <td>${p.nomeAventureiro}</td>
+          <td>${p.classe}</td>
+          <td>${p.level}</td>
+          <td>${p.forca}</td>
+          <td>${p.defesa}</td>
+        </tr>
+      `;
+      tbody.innerHTML += linha;
+    });
+  }
+
+  document
+    .getElementById("btnListarPersonagens")
+    .addEventListener("click", () => {
+      renderizarTabelaPersonagens();
+    });
+});
 
 Personagem._idAtual = 1;
 
@@ -164,7 +353,7 @@ export class RPGManager {
     return this.personagens;
   }
 
-  buscarPersonagemPorId(id) {
+  buscarPersonagemPorId(buscarPersonagemPorId) {
     const personagem = this.personagens.find((p) => p.id === id);
     if (!personagem) throw new Error(`Personagem com ID ${id} não encontrado.`);
     return personagem;
@@ -194,71 +383,6 @@ export class RPGManager {
     if (index === -1)
       throw new Error(`Personagem com ID ${id} não encontrado.`);
     this.personagens.splice(index, 1);
-    return true;
-  }
-
-  validarItem(item) {
-    if (!(item instanceof ItemMagico)) {
-      throw new Error("Objeto inválido. Esperado: ItemMagico.");
-    }
-    const { tipo, forca, defesa } = item;
-
-    if (forca === 0 && defesa === 0) {
-      throw new Error(
-        "O item deve ter pelo menos Força ou Defesa maior que 0."
-      );
-    }
-
-    if (forca > 10 || defesa > 10) {
-      throw new Error("Força e Defesa devem ser no máximo 10.");
-    }
-
-    if (tipo === "Arma" && defesa !== 0) {
-      throw new Error("Armas devem ter Defesa igual a 0.");
-    }
-
-    if (tipo === "Armadura" && forca !== 0) {
-      throw new Error("Armaduras devem ter Força igual a 0.");
-    }
-
-    if (!["Arma", "Armadura", "Amuleto"].includes(tipo)) {
-      throw new Error("Tipo inválido. Use apenas: Arma, Armadura ou Amuleto.");
-    }
-
-    return true;
-  }
-
-  criarItemMagico(item) {
-    this.validarItem(item);
-    item.id = this.idItemAtual++;
-    this.itensMagicos.push(item);
-    return item;
-  }
-
-  listarItensMagicos() {
-    return this.itensMagicos;
-  }
-
-  buscarItemMagicoPorId(id) {
-    const item = this.itensMagicos.find((i) => i.id === id);
-    if (!item) throw new Error("Item não encontrado.");
-    return item;
-  }
-
-  atualizarItemMagico(itemAtualizado) {
-    this.validarItem(itemAtualizado);
-    const index = this.itensMagicos.findIndex(
-      (i) => i.id === itemAtualizado.id
-    );
-    if (index === -1) throw new Error("Item não encontrado.");
-    this.itensMagicos[index] = itemAtualizado;
-    return itemAtualizado;
-  }
-
-  removerItemMagico(id) {
-    const index = this.itensMagicos.findIndex((i) => i.id === id);
-    if (index === -1) throw new Error("Item não encontrado.");
-    this.itensMagicos.splice(index, 1);
     return true;
   }
 }
